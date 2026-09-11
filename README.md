@@ -51,11 +51,19 @@
 
 ## 三、技术亮点（难在哪，怎么证）
 
-**四个硬骨头（均有根因定位）**
-1. **BOE 大屏逆向移植**：无 datasheet，从 **RK3399 三防平板的安卓 DTB** 提取 init 序列/时序/引脚映射；`CONFIG_T070S140B_MIPI` 与 `CONFIG_BOE_1200X1920_MIPI` 必须互斥（`g_lcd0_config` 重定义）；横屏走**驱动层旋转**（LVGL 矩阵旋转与 DIRECT 渲染不兼容，曾 Data Abort）。
-2. **开机偶发卡 LOGO**：NuttX `de_dsi.c:dsi_gen_wr()` 的 `while(inst_busy);` 无超时死等；仿 `dsi_dcs_wr`（有界 50 次/5ms + 强清）加界根治。→ 公共仓 PR。
-3. **健康提示音"多一声"尾音**：`tone_play_one` 只设 `hw_params` 漏 `sw_params(silence_size)`，短 WAV EOF 后 DMA 欠载重播上一段；补齐后上板验证消失。→ 私仓（App 侧）。
-4. **切歌/连播无声**：codec `RDEN OFF` 清零写反 + RAMP FSM 未复位；`POWER_ANA_CTL@0x348` 只许 `update_bits()` 局部操作、**禁止整写**（-7 屏闪教训）。→ 公共仓 PR（仅麦克风关断 POP）。
+**关键难点攻坚（按投入规模排序，均有根因定位）**
+
+| # | 难点 | 投入规模 | 根因 → 解决（怎么证） |
+|---|---|---|---|
+| 1 | **音乐播放链路**：无声 → 切歌无声 → 卡顿 → 尾音 | 8-6~8-8，约 86 次固化（全项目最久） | ①无声=`writei` 帧数当字节返回 + `adecoder` 硬编码 16bit 覆盖 24bit；②MP3 无声=44100 未走已验证的 48000 重采样；③切歌无声=声卡 `ref_count!=0` 未释放 + `RDEN` 清零写反 + **close 不保证 Ramp FSM 复位**（close 清 bit30/28 + `RAMP_SRST`，ok-20260808-12）；④尾音=`tone_play_one` 漏 `sw_params(silence_size)` 致 DMA 欠载重播 → 建**音频仲裁层**收口 |
+| 2 | **AI 实时语音链路** | 8-11~8-17，多日（P48~P113） | ai_agent 集成 HTTPS/TLS + LLM；MIC 录音（media 框架未编入→改 `snd_vela_pcm`、开 MIC1、16KB 栈）；**双向流式 TTS 按官方协议重写为 seed-tts-2.0**（X-Api-Key/事件帧/FinishSession）；ASR 响应帧/VAD/削波/WS 缓冲 128KB/TTS 403；尾音=PA 关断排在静音前（改 静音→5ms→关 PA→关 DAC，ok-20260901） |
+| 3 | **BOE 大屏逆向移植 + 链路加固** | 8-3~8-6，38 tag | 无 datasheet → 从 **RK3399 三防平板安卓 DTB** 提取 init/时序/引脚；`g_lcd0_config` 互斥；横屏走**驱动层旋转**（LVGL 矩阵旋转与 DIRECT 不兼容，曾 Data Abort）；**卡 LOGO**=`de_dsi.c:dsi_gen_wr()` 无超时死等（加界根治，→公共仓 PR）；**-7 屏闪**=`POWER_ANA_CTL@0x348` 被整写（只许 `update_bits()`） |
+| 4 | **GT9271 触摸驱动** | 7-24~7-28，六轮复盘 + 9 次烧录 | I2C 地址时序、零长度写、combined 返回值判据、瞬态 NACK、坐标 mask/burst/maxpoint/circbuf、LCD 抢占 pinmux、外部 2.2k 上拉、TWI1 冲突 |
+| 5 | **WiFi `0x27` 三次复发** | 8-11 / 8-12 / 9-11 | 同一症状三种根因，最后实锤=**res 分区没烧完整**（固件校验 fail）→ 催生打包三段断言防呆 |
+| 6 | **UART 工具与换口** | 8-26~8-27，32 tag | UART0 与 TF 共用 PF2/PF4；PD21/22 被 `drv_gpio` 覆盖；1.5M 波特率触 apb1 24M 极限失败；换 UART3 后因电平电路迁回 |
+| 7 | **电子宠物精灵链路** | 9-6~9-9，48 tag | 12 态 × 12 帧；黑猫事件=**`ar` 归档同名 `_N.o` 不替换**取旧占位帧；G2D 缩放 bug → 预转 300×300；PIL 生成 + 分区扩容 |
+| 8 | **LVGL 大屏 UI** | 全程，6 个大版本 | 字体 fallback 链（montserrat 缺字形）；`lv_color_t` 3B 越界 16KB（Data Abort）；flex 覆盖 `set_width`；矩阵旋转不兼容 |
+
 
 **硬件设计与适配**：全新硬件平台适配（R528 BSP + 无 datasheet 屏逆向）。驱动/适配：MIPI DSI 面板（新增）、GT9271 触摸、DSI 链路加固、`sun8iw20-codec`（麦克风关断 POP）、LTR553 ALS（积分时间×增益校正）、SD-MMC 多块读修复、UART/LD2410B 换口与引脚冲突。
 **选型教训**：早期评估 **6 英寸 2160×1080** 屏不可用——能点亮、纯色正常，但一进 LVGL UI 即扭曲畸变，确认为**超出 R528 显示链路上限**；教训：选屏先确认 SoC 显示上限再投入。

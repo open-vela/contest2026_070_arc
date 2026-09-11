@@ -141,6 +141,20 @@ AI 落地的"最后一公里"是放在桌上、天天会用的东西。当前 AI
 2. **LVGL 三处通用 bugfix**：GE2D gating、触摸物理分辨率 clamp、缺字形占位；并建议文档明示 LVGL 9.1 + XRGB8888 下 `lv_color_t` 实际 3 字节，缓冲分配须按色彩格式字节数而非 `sizeof(lv_color_t)`（曾致 16KB 越界 Data Abort）。
 3. **音频链路分层定位经验**：短 WAV 重播"尾音"是 App 侧 `tone_play_one` 漏 `sw_params(silence_size)` 导致 DMA 欠载重播上一段，与驱动关断顺序无关，建议示例代码统一补 `sw_params`；codec 麦克风关断 POP 才是驱动问题（先关 ADC→延时→再断 MICBIAS）。
 
+
+**关键难点攻坚（按投入规模排序，均有根因定位）**
+
+| # | 难点 | 投入规模 | 根因 → 解决（怎么证） |
+|---|---|---|---|
+| 1 | **音乐播放链路**：无声 → 切歌无声 → 卡顿 → 尾音 | 8-6~8-8，约 86 次固化（全项目最久） | ①无声=`writei` 帧数当字节返回 + `adecoder` 硬编码 16bit 覆盖 24bit；②MP3 无声=44100 未走已验证的 48000 重采样；③切歌无声=声卡 `ref_count!=0` 未释放 + `RDEN` 清零写反 + **close 不保证 Ramp FSM 复位**（close 清 bit30/28 + `RAMP_SRST`，ok-20260808-12）；④尾音=`tone_play_one` 漏 `sw_params(silence_size)` 致 DMA 欠载重播 → 建**音频仲裁层**收口 |
+| 2 | **AI 实时语音链路** | 8-11~8-17，多日（P48~P113） | ai_agent 集成 HTTPS/TLS + LLM；MIC 录音（media 框架未编入→改 `snd_vela_pcm`、开 MIC1、16KB 栈）；**双向流式 TTS 按官方协议重写为 seed-tts-2.0**（X-Api-Key/事件帧/FinishSession）；ASR 响应帧/VAD/削波/WS 缓冲 128KB/TTS 403；尾音=PA 关断排在静音前（改 静音→5ms→关 PA→关 DAC，ok-20260901） |
+| 3 | **BOE 大屏逆向移植 + 链路加固** | 8-3~8-6，38 tag | 无 datasheet → 从 **RK3399 三防平板安卓 DTB** 提取 init/时序/引脚；`g_lcd0_config` 互斥；横屏走**驱动层旋转**（LVGL 矩阵旋转与 DIRECT 不兼容，曾 Data Abort）；**卡 LOGO**=`de_dsi.c:dsi_gen_wr()` 无超时死等（加界根治，→公共仓 PR）；**-7 屏闪**=`POWER_ANA_CTL@0x348` 被整写（只许 `update_bits()`） |
+| 4 | **GT9271 触摸驱动** | 7-24~7-28，六轮复盘 + 9 次烧录 | I2C 地址时序、零长度写、combined 返回值判据、瞬态 NACK、坐标 mask/burst/maxpoint/circbuf、LCD 抢占 pinmux、外部 2.2k 上拉、TWI1 冲突 |
+| 5 | **WiFi `0x27` 三次复发** | 8-11 / 8-12 / 9-11 | 同一症状三种根因，最后实锤=**res 分区没烧完整**（固件校验 fail）→ 催生打包三段断言防呆 |
+| 6 | **UART 工具与换口** | 8-26~8-27，32 tag | UART0 与 TF 共用 PF2/PF4；PD21/22 被 `drv_gpio` 覆盖；1.5M 波特率触 apb1 24M 极限失败；换 UART3 后因电平电路迁回 |
+| 7 | **电子宠物精灵链路** | 9-6~9-9，48 tag | 12 态 × 12 帧；黑猫事件=**`ar` 归档同名 `_N.o` 不替换**取旧占位帧；G2D 缩放 bug → 预转 300×300；PIL 生成 + 分区扩容 |
+| 8 | **LVGL 大屏 UI** | 全程，6 个大版本 | 字体 fallback 链（montserrat 缺字形）；`lv_color_t` 3B 越界 16KB（Data Abort）；flex 覆盖 `set_width`；矩阵旋转不兼容 |
+
 ### 3.4 系统实现
 
 **软件/固件架构**
