@@ -103,7 +103,7 @@ cd vendor/allwinnertech/lichee && source envsetup.sh && lunch_nuttx 2 && pack
 ```
 
 - **演示物料**：TF 卡放 `/sdcard/music`（1 mp3 + 1 wav）与 `/sdcard/book`（UTF-8 短 txt）；板子连 WiFi；雷达对人 ≤1.5m。
-- **3 分钟冒烟**：① 开机进 Home（无卡 LOGO）；② 点猫有反应；③ AI 子页快问（无 key 可测本地链路）；④ 坐到传感器前播欢迎；⑤ 音乐播 mp3 无尾音、切歌不哑。
+- **开机快速验证（约 3 分钟）**：① 开机进 Home（无卡 LOGO）；② 点猫有反应；③ AI 子页快问（无 key 可测本地链路）；④ 坐到传感器前播欢迎；⑤ 音乐播 mp3 无尾音、切歌不哑。
 - **排障**：`RTL871X download_fw FAIL status=0x27` = res 分区没完整烧录，重烧整包；`亮度/光感恒 0` = 传感器未接。
 
 ---
