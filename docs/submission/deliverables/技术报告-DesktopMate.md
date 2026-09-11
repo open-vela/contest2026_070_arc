@@ -391,7 +391,7 @@ AI 语音对话：
 | 7-25 | `7-25part2devlog.md` | GT9271 调试"专家思维模型"文档：给出四层排查法（静态分析→寄存器取证→差异分析→假设验证）与不跳步、一次改一变量等纪律，附第 5/6 轮教训。 |
 | 7-25 | `7-25part3devlog.md` | R528/OpenVela SDK 能力手册：汇总 13 项调试能力（CCU 时钟/复位、MMIO 映射、GPIO pinmux、TWI STAT 状态码、GIC IRQ41、NSH i2c 工具、Linux goodix 参考等），给出已验证寄存器地址与诊断地址陷阱。 |
 | 7-25 | `7-25part4devlog.md` | 给 Gemini 的 GT9271 靶向引导 Prompt：列出已排除假设、正确 GICD 地址、唯一未解问题（TWI 出 START 不出中断），按性价比给出三条方案。 |
-| 7-25 | `7-25part5devlog.md` | GT9271 I2C 接力 Prompt：完整交代硬件/调用链/已试修复/排除假设，附第 6 轮烧录纪录表与避坑清单；结论 GIC/CCU 正常，怀疑 TWI 模块级不产中断。 |
+| 7-25 | `7-25part5devlog.md` | GT9271 I2C 接力 Prompt：完整交代硬件/调用链/已试修复/排除假设，附第 6 轮烧录纪录表与注意事项；结论 GIC/CCU 正常，怀疑 TWI 模块级不产中断。 |
 | 7-25 | `7-25part6devlog.md` | MiuMiu 施工日志：定位 GT9271 首次 I2C 读取必 NACK 属芯片行为，在 gt911_worker 加"失败→重置→重试"修复并验证 100% 恢复；重写 lvgldemo 触摸 Demo、nxplayer 支持命令行播放。 |
 | 7-25 | `7-25part7devlog.md` | MiuMiu 施工逻辑：按 9 次烧录记录，第 2 次 ENG_RES 捕获 msgs_idx=32（0x20 SLA+NACK）定位到芯片层，第 3 次"重置+重试"修复；RST 上拉无效、INT 上拉有害。 |
 | 7-25 | `7-25part8devlog.md` | MiuMiu 接力 Prompt：说明 GT9271 修复、LVGL 触摸 Demo、NXPlayer 开机播放的已完成项与验证清单，附开机流程、关键文件、已知问题与重编命令。 |
@@ -427,8 +427,8 @@ AI 语音对话：
 | 8-7 | `8-7devlog.md` | 清 [dm] 日志洪水修复第一首死机；证伪 XPlayer 调音量；codec 输出寄存器逐位一致；distclean 修复字体（rcS.nsh prebuilt 未刷新）；定位并修 SDMMC 多块读 DMA bug，恢复 MMCSD_MULTIBLOCK_LIMIT=0。 |
 | 8-7 | `8-7part2devlog.md` | 面向外部 AI 的自包含排查报告：数字链路全面排除、aplay 播 WAV 有杂音证物理链路通，结论无声与歌曲强相关；DAC_CNT 满速增长证数据进 DAC。 |
 | 8-7 | `8-7part3devlog.md` | 切歌无声决战：三次方向修正（歌曲级→XPlayerReset→声卡第二次 open），destroy&recreate 仍无声，mono 混音排除反相，buffer8192 修 XRUN，修 dm_sound 泄漏。 |
-| 8-8 | `8-8devlog.md` | 切歌无声软件侧最终排查与硬件验证指导：汇总已铁证排除项，规划任务 A（寄存器 dump/RAMP 复位/暴力 power-cycle）、任务 B 万用表 AC 测 LINEOUT 二分、任务 C 诊断收敛。 |
-| 8-8 | `8-8part1devlog.md` | A2/A3 证伪且 A3 致 BOOT0 重启回滚；codec 全面回滚后首播有声恢复；定位切歌死机真凶=XPlayer 内部已销毁 sink 致 app 二次 free（UAF），改只置 NULL；修 OFF 分支 RDEN 清零条件写反。 |
+| 8-8 | `8-8devlog.md` | 切歌无声软件侧最终排查与硬件验证指导：汇总已铁证排除项，规划任务 A（寄存器 dump/RAMP 复位/强制上下电）、任务 B 万用表 AC 测 LINEOUT 二分、任务 C 诊断收敛。 |
+| 8-8 | `8-8part1devlog.md` | A2/A3 证伪且 A3 致 BOOT0 重启回滚；codec 全面回滚后首播有声恢复；定位切歌死机根因=XPlayer 内部已销毁 sink 致 app 二次 free（UAF），改只置 NULL；修 OFF 分支 RDEN 清零条件写反。 |
 | 8-8 | `8-8part2devlog.md` | 终极报告：bit30 为 R/W1C 硬件状态位写不进、模拟电源从未断电；查 R528 手册定论 RD_EN 只是 gate、close 不保证 Ramp FSM 复位，close 清 bit30/28+RAMP_SRST 后上板切歌有声（ok-20260808-12）。 |
 | 8-8 | `8-8part3devlog.md` | 音乐控件系列修复：HOME/锁屏点播放补扫歌单并恢复历史曲目、修背光极相反、补 reset_idle_timer、三 UI 按钮按压统一白符号、歌单改紧凑+80% 玻璃；首建版本号体系归档 Beta-V0.0.1。 |
 | 8-8 | `8-8part4devlog.md` | 修 WiFi SSID 列表空白（扫描未检查返回值致 g_scan_done 恒 0 卡"扫描中"）+Books 点不进（静态 hero 卡无点击事件、空书架无提示）；蓝牙 H4 open -110 定位到驱动层另行处理。 |
