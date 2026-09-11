@@ -12,7 +12,7 @@
 
 ## 一、作品简介
 
-**openvela 大赛赞助的 R528S3-Gemini-S1 开发板** + **利旧自旧平板的 BOE 1200×1920 MIPI DSI 屏**（横屏 1920×1200，由安卓 DTB 移植点亮）+ GT9271 触摸 + UART 人体存在传感器 + 喇叭，运行 openvela（NuttX），做成桌面 AI 伙伴。
+**openvela 大赛赞助的 R528S3-Gemini-S1 开发板** + **取自旧平板的 BOE 1200×1920 MIPI DSI 屏**（横屏 1920×1200，由安卓 DTB 移植点亮）+ GT9271 触摸 + UART 人体存在传感器 + 喇叭，运行 openvela（NuttX），做成桌面 AI 伙伴。
 
 **功能清单（上板可验）**
 
