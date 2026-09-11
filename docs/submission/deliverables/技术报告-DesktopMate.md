@@ -135,7 +135,7 @@ AI 落地的"最后一公里"是放在桌上、天天会用的东西。当前 AI
 - **多媒体**：XPlayer 音频播放（MP3/WAV）+ PCM 音频流 + codec 配置。
 - 涉及组件：`nuttx`（内核）、`apps/graphics/lvgl`（图形）、`packages/ai_agent`（AI）、`apps/audio` + XPlayer（多媒体）。
 
-对 openvela 的优化/改进建议（已实测，拟 PR 至 `dev-ai-contest-2026`）：
+对 openvela 的优化/改进（已实测；其中**驱动修复已提 PR** → [open-vela/vendor_allwinnertech#20](https://github.com/open-vela/vendor_allwinnertech/pull/20)，含 **BOE 面板 / de_dsi 超时 / ltr553 ALS / codec 麦克风 POP**；下列 2、3 为通用建议，暂未单独提）：
 
 1. **`de_dsi.c` gen 写无超时死等**：`dsi_gen_wr()` 的 `while(inst_busy);` 无界自旋，面板 init 约 30 次调用中偶发不清零即卡 LOGO；仿同文件 `dsi_dcs_wr`（有界 50 次/5ms + 强清）补超时根治，建议对全部 gen 写路径统一加界。
 2. **LVGL 三处通用 bugfix**：GE2D gating、触摸物理分辨率 clamp、缺字形占位；并建议文档明示 LVGL 9.1 + XRGB8888 下 `lv_color_t` 实际 3 字节，缓冲分配须按色彩格式字节数而非 `sizeof(lv_color_t)`（曾致 16KB 越界 Data Abort）。
@@ -389,7 +389,7 @@ AI 语音对话：
 ## 5、注意事项
 
 - AI Coding 日志已入仓 `logs/`（149 个会话，2026-08-01 ~ 2026-09-11）；AtomCode 来源已由脚本归一化并如实标注 `tool`。
-- 作品原创，遵循 Apache 2.0；公共仓改动（驱动 + LVGL）另提 PR 至 `dev-ai-contest-2026`。
+- 作品原创，遵循 Apache 2.0；公共仓驱动改动**已提 PR** → [open-vela/vendor_allwinnertech#20](https://github.com/open-vela/vendor_allwinnertech/pull/20)。
 - openvela 系统能力落地：图形（LVGL）、AI（ai_agent + 语音对话）、多媒体（XPlayer/音频）。
 - 语音交互为纯按钮 PTT，无唤醒词（已评估放弃 always-on 唤醒）。
 

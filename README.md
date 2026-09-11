@@ -69,7 +69,7 @@
 **选型教训**：早期评估 **6 英寸 2160×1080** 屏不可用——能点亮、纯色正常，但一进 LVGL UI 即扭曲畸变，确认为**超出 R528 显示链路上限**；教训：选屏先确认 SoC 显示上限再投入。
 
 **openvela 能力运用（图形 / AI / 多媒体三项）**：LVGL 9.1（图形）、`packages/ai_agent` + 自研 `dm_ai` WS（AI）、XPlayer + PCM（多媒体）。组件：`nuttx`、`apps/graphics/lvgl`、`packages/ai_agent`、`apps/audio` + XPlayer。
-**对 openvela 的改进建议（实测，拟 PR）**：① `de_dsi` gen 写加超时；② LVGL 三处通用 bugfix（GE2D gating / 触摸物理分辨率 clamp / 缺字形占位）+ 文档明示 `lv_color_t` 按色彩格式字节数分配；③ 音频示例统一补 `sw_params`。
+**对 openvela 的改进（实测）**：① **已提 PR → [open-vela/vendor_allwinnertech#20](https://github.com/open-vela/vendor_allwinnertech/pull/20)**：`de_dsi` 超时、BOE 1200×1920 面板、`ltr553` ALS、`sun8iw20-codec` 麦克风关断 POP；② 通用建议（暂未单独提）：LVGL 三 fix（GE2D gating / 触摸物理分辨率 clamp / 缺字形占位）、音频示例统一补 `sw_params`。
 
 ---
 
