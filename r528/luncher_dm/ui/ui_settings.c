@@ -196,12 +196,21 @@ static void storage_update(lv_obj_t *val_lbl, lv_obj_t *bar)
     /* LVGL lv_snprintf 不保证 %f（LV_SPRINTF_USE_FLOAT 需另开）→ 整数 MB/GB */
     uint64_t mb  = used / (1024u * 1024u);
     uint64_t tmb = total / (1024u * 1024u);
-    if (tmb >= 1024u)
-        lv_snprintf(buf, sizeof(buf), "已用 %d / 共 %d GB",
-                    (int)(mb / 1024u), (int)(tmb / 1024u));
-    else
+    if (tmb >= 1024u) {
+        if (mb < 1024u) {
+            /* 用量 <1GB：用 MB 显示，避免截断成「已用 0 GB」（37MB 曾被显示为 0） */
+            lv_snprintf(buf, sizeof(buf), "已用 %d MB / 共 %d GB",
+                        (int)mb, (int)(tmb / 1024u));
+        } else {
+            /* 用量 >=1GB：GB + 1 位小数 */
+            lv_snprintf(buf, sizeof(buf), "已用 %d.%d / 共 %d.%d GB",
+                        (int)(mb / 1024u), (int)((mb % 1024u) * 10u / 1024u),
+                        (int)(tmb / 1024u), (int)((tmb % 1024u) * 10u / 1024u));
+        }
+    } else {
         lv_snprintf(buf, sizeof(buf), "已用 %d / 共 %d MB",
                     (int)mb, (int)tmb);
+    }
     lv_label_set_text(val_lbl, buf);
     if (bar)
         lv_bar_set_value(bar, total > 0 ? (int)((used * 100) / total) : 0,

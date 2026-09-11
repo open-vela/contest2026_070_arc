@@ -49,6 +49,7 @@
 #include "pet_core.h"      /* 2026-09-10 P206：宠物引擎开机初始化（先有鸡先有蛋修复，见下） */
 #include "dm_alarm.h"      /* 2026-09-10 P206：闹钟引擎（读盘+1s检查timer） */
 #include "dm_weather.h"    /* T1：开机用上次落盘时间兜底（无 RTC 电池） */
+#include "dm_screenshot.h" /* 2026-09-11：LRADC 按键触发全屏截图存 TF 卡（本地固件） */
 
 /* 包含传感器相关头文件 */
 #include <poll.h>
@@ -689,6 +690,8 @@ int luncher_dm_main(int argc, FAR char *argv[])
     dm_time_restore_at_boot();
     /* 创建 Desktop Mate 界面 */
     deskmate_ui_create();
+    /* 2026-09-11：按键截图（本地固件；任一 LRADC 键 → /sdcard/screenshots/） */
+    dm_screenshot_init();
     /* 传感器相关初始化（数据采集保留，UI 显示后续接入 deskmate 卡片） */
     /* 初始化传感器主题 */
     lv_subject_init_int(&temperature_subject, 250);  // 默认25.0°C

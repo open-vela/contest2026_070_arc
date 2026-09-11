@@ -33,6 +33,9 @@ CSRCS += dm_city.c ui/ui_pet.c ui/ui_calendar.c dm_alarm.c ui/ui_alarm.c
 # 2026-09-10 P211：日期与时间独立子页（Settings 嵌套，宠物同款）
 CSRCS += ui/ui_datetime.c
 
+# 2026-09-11 截图（LRADC 按键触发全屏 BMP，本地固件）
+CSRCS += dm_screenshot.c
+
 # mcpserver built-in application info
 
 PROGNAME = $(CONFIG_LUNCHER_DM_APP_PROGNAME)
@@ -45,6 +48,10 @@ $(eval $(AW_ADD_HAL_INCLUDES))
 
 # Phase 1 拆分：ui/ 子目录源文件需包含本目录头（deskmate_ui.h / dm_net.h）
 CFLAGS += ${INCDIR_PREFIX}$(CURDIR)
+
+# 2026-09-11 截图 PNG：libpng/zlib 已编入 libapps.a，这里只需头文件路径
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/libpng/libpng
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/system/zlib/zlib
 
 # WiFi (RTL8733BS) — status query + on/off from UI (wifi_conf.h)
 $(eval $(AW_ADD_WIFI_INCLUDES))

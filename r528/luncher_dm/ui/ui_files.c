@@ -63,6 +63,8 @@ static int  files_paste_check_conflicts(void);      /* P145：统计与目标目
 static void files_paste_confirm_go(void);           /* P145：重名确认 OK → 执行粘贴 */
 static void files_copy_ui_show(void);               /* P145：进度条 UI + 轮询定时器 */
 static void files_copy_timer_cb(lv_timer_t *t);     /* P145：进度刷新/收尾 */
+static void files_img_viewer_open(const char *path);/* 2026-09-11：图片查看器 */
+static void files_img_viewer_close(void);
 
 /* ================================================================
  * FILES SUBPAGE — 专业平板文件管理器 UI
@@ -130,6 +132,16 @@ static lv_timer_t *files_copy_timer;  /* P145：进度刷新定时器 */
 static lv_obj_t *files_copy_arc;      /* P145：进度环 */
 static lv_obj_t *files_copy_pct_lbl;  /* P145：环中心百分比 */
 
+/* 2026-09-11 图片查看器：文件浏览器点图片 → 全屏 overlay，等比适配 +
+ * 关闭按钮 + 缩放 +/- + 点背景关闭，避免"全屏后出不去" */
+static lv_obj_t *files_img_overlay;
+static lv_obj_t *files_img_widget;
+static char      files_img_path[256];     /* LVGL 按路径延迟解码，字符串需常驻 */
+static uint32_t  files_img_fit_scale = 256;
+static uint32_t  files_img_scale = 256;
+#define FILES_IMG_SCALE_MIN 32
+#define FILES_IMG_SCALE_MAX 1024
+
 /* 操作栏/上级按钮随子页销毁——close_subpage 删除 overlay 前置空，防野指针。
  * Phase 1 拆分：非 static（deskmate_ui.c close_subpage 调用，deskmate_ui.h 声明） */
 void files_ui_clear_ptrs(void)
@@ -145,6 +157,7 @@ void files_ui_clear_ptrs(void)
     files_copy_arc      = NULL;
     files_copy_pct_lbl  = NULL;
     files_copy_running  = 0;      /* 后台线程跑完无害；清标志防下次粘贴被 running 挡住 */
+    files_img_viewer_close();     /* 2026-09-11：图片查看器随子页销毁 */
 }
 
 /* 根据扩展名判断文件类型 */
@@ -1208,6 +1221,141 @@ static void files_cb_delete(lv_event_t *e)
     files_dialog_show(msg, files_do_delete);
 }
 
+/* ═══════════ 图片查看器（2026-09-11）═══════════
+ * 文件浏览器点 .png/.jpg → 全屏 overlay：
+ *   - 图片等比适配屏幕（留边），不强行拉伸
+ *   - 右上角白色关闭圆钮（LV_SYMBOL_CLOSE）
+ *   - 底部 −/+ 缩放（step 25%，下限 fit/4、上限 4x）
+ *   - 点图片外的背景也可关闭（图片本身不接点击，事件冒泡到 overlay） */
+static void files_img_viewer_close(void)
+{
+    if (files_img_overlay) {
+        lv_obj_del(files_img_overlay);
+        files_img_overlay = NULL;
+        files_img_widget = NULL;
+    }
+}
+
+static void files_img_close_cb(lv_event_t *e)  { (void)e; files_img_viewer_close(); }
+static void files_img_backdrop_cb(lv_event_t *e) { (void)e; files_img_viewer_close(); }
+
+static void files_img_apply_zoom(int dir)
+{
+    uint32_t next;
+
+    if (files_img_widget == NULL) return;
+    next = (dir > 0) ? files_img_scale + files_img_scale / 4
+                     : files_img_scale - files_img_scale / 4;
+    if (next > FILES_IMG_SCALE_MAX)       next = FILES_IMG_SCALE_MAX;
+    if (next < files_img_fit_scale / 4)   next = files_img_fit_scale / 4;
+    if (next < FILES_IMG_SCALE_MIN)       next = FILES_IMG_SCALE_MIN;
+    files_img_scale = next;
+    lv_image_set_scale(files_img_widget, files_img_scale);
+}
+
+static void files_img_zoom_in_cb(lv_event_t *e)  { (void)e; files_img_apply_zoom(1); }
+static void files_img_zoom_out_cb(lv_event_t *e) { (void)e; files_img_apply_zoom(-1); }
+
+/* 圆形玻璃按钮：图标居中 */
+static lv_obj_t *files_img_round_btn(lv_obj_t *parent, const char *sym,
+                                     lv_event_cb_t cb)
+{
+    lv_obj_t *btn = lv_btn_create(parent);
+    lv_obj_set_size(btn, DM(44), DM(44));
+    lv_obj_set_style_radius(btn, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_set_style_bg_opa(btn, LV_OPA_90, 0);
+    lv_obj_set_style_shadow_width(btn, 0, 0);
+    lv_obj_set_style_border_width(btn, 0, 0);
+    lv_obj_add_event_cb(btn, cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *lbl = lv_label_create(btn);
+    lv_label_set_text(lbl, sym);
+    lv_obj_set_style_text_font(lbl, FONT_ICON, 0);
+    lv_obj_set_style_text_color(lbl, lv_color_hex(0x000000), 0);
+    lv_obj_center(lbl);
+    return btn;
+}
+
+static void files_img_viewer_open(const char *path)
+{
+    lv_coord_t sw = lv_disp_get_hor_res(lv_disp_get_default());
+    lv_coord_t sh = lv_disp_get_ver_res(lv_disp_get_default());
+    lv_image_header_t hdr;
+    lv_obj_t *parent;
+    lv_obj_t *btn;
+    uint32_t fit = 256;
+
+    if (path == NULL || path[0] == '\0') return;
+    if (files_img_overlay) files_img_viewer_close();
+
+    snprintf(files_img_path, sizeof(files_img_path), "%s", path);
+
+    /* 先探尺寸：不支持的格式/坏文件 → toast，不进空 overlay */
+    if (lv_image_decoder_get_info(files_img_path, &hdr) != LV_RESULT_OK ||
+        hdr.w == 0 || hdr.h == 0) {
+        files_toast_show("无法打开此图片");
+        return;
+    }
+    /* 防超大图解码 OOM（约 4B/px；图片缓存上限 64MB） */
+    if ((uint32_t)hdr.w * (uint32_t)hdr.h > 12u * 1024u * 1024u) {
+        files_toast_show("图片过大，暂不支持");
+        return;
+    }
+
+    parent = subpage_overlay ? subpage_overlay : lv_scr_act();
+    files_img_overlay = lv_obj_create(parent);
+    lv_obj_remove_style_all(files_img_overlay);
+    lv_obj_set_size(files_img_overlay, sw, sh);
+    lv_obj_set_style_bg_color(files_img_overlay, lv_color_black(), 0);
+    lv_obj_set_style_bg_opa(files_img_overlay, LV_OPA_COVER, 0);
+    lv_obj_clear_flag(files_img_overlay, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(files_img_overlay, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(files_img_overlay, files_img_backdrop_cb,
+                        LV_EVENT_CLICKED, NULL);
+    lv_obj_move_foreground(files_img_overlay);
+
+    files_img_widget = lv_image_create(files_img_overlay);
+    lv_obj_set_size(files_img_widget, sw, sh);
+    lv_obj_set_style_bg_opa(files_img_widget, LV_OPA_0, 0);
+    lv_obj_set_style_border_width(files_img_widget, 0, 0);
+    lv_obj_clear_flag(files_img_widget, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(files_img_widget, LV_OBJ_FLAG_CLICKABLE);
+    lv_image_set_inner_align(files_img_widget, LV_IMAGE_ALIGN_CENTER);
+    lv_image_set_src(files_img_widget, files_img_path);
+
+    /* 等比适配（留边 DM(48)） */
+    {
+        uint32_t avail_w = (uint32_t)(sw > DM(48) ? sw - DM(48) : sw);
+        uint32_t avail_h = (uint32_t)(sh > DM(48) ? sh - DM(48) : sh);
+        uint32_t sx = avail_w * 256u / (uint32_t)hdr.w;
+        uint32_t sy = avail_h * 256u / (uint32_t)hdr.h;
+        fit = (sx < sy) ? sx : sy;
+        if (fit < FILES_IMG_SCALE_MIN) fit = FILES_IMG_SCALE_MIN;
+    }
+    files_img_fit_scale = fit;
+    files_img_scale = fit;
+    lv_image_set_scale(files_img_widget, files_img_scale);
+
+    /* 右上角关闭（必须显眼，防全屏出不去） */
+    btn = files_img_round_btn(files_img_overlay, LV_SYMBOL_CLOSE,
+                              files_img_close_cb);
+    lv_obj_set_pos(btn, sw - DM(60), DM(16));
+    assert(sw - DM(60) >= 0 && sw - DM(60) + DM(44) <= sw &&
+           DM(16) + DM(44) <= sh);
+
+    /* 底部缩放 −/+ */
+    btn = files_img_round_btn(files_img_overlay, LV_SYMBOL_MINUS,
+                              files_img_zoom_out_cb);
+    lv_obj_set_pos(btn, sw / 2 - DM(56), sh - DM(64));
+    assert(sw / 2 - DM(56) >= 0 && sw / 2 - DM(56) + DM(44) <= sw &&
+           sh - DM(64) + DM(44) <= sh);
+    btn = files_img_round_btn(files_img_overlay, LV_SYMBOL_PLUS,
+                              files_img_zoom_in_cb);
+    lv_obj_set_pos(btn, sw / 2 + DM(12), sh - DM(64));
+    assert(sw / 2 + DM(12) >= 0 && sw / 2 + DM(12) + DM(44) <= sw &&
+           sh - DM(64) + DM(44) <= sh);
+}
+
 /* 打开文件（.txt → Books 阅读器；.mp3/.wav → Music 播放；其他 → toast 提示） */
 static void files_open_file(const char *path, int type)
 {
@@ -1228,8 +1376,11 @@ static void files_open_file(const char *path, int type)
          * 播放器页/锁屏标题走 dm_now_* 正确显示，不再受列表扫描影响。 */
         music_play_path(path);
         files_toast_show("正在播放");
+    } else if (type == FILE_TYPE_IMG) {
+        /* 2026-09-11：图片查看器（全屏 overlay + 关闭按钮，防出不去） */
+        files_img_viewer_open(path);
     } else {
-        /* IMG / OTHER：暂无查看器 → 提示反馈（P1-7 消灭交互死区） */
+        /* OTHER：暂无查看器 → 提示反馈（P1-7 消灭交互死区） */
         files_toast_show("暂不支持打开此类文件");
     }
 }
