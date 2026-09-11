@@ -1,12 +1,12 @@
 # DesktopMate 桌面伙伴（YNM-3000）— R528 + openvela
 
 > 2026 首届 openvela AI 硬件开发者大赛 ｜ 赛道：**AI 硬件产品创新**（含新硬件平台适配）｜ 专属仓 `contest2026_070_arc`
-> 队员：arclau（独立成队，软硬件全栈）｜ 协议：Apache-2.0（见 `LICENSE`）｜ 截止 9.20
+> 队员：arclau（独立成队，软硬件全栈）｜ 协议：Apache-2.0（见 `LICENSE`）
 > 代码基线：**ok-20260911-21 / V1.0.0-20260911**（`vela.bin`/nsh md5 `e342f7c5`；整包镜像 md5 `08009ea7`，48MB）
 
-> 📷🎬 实拍照片与演示视频（≤5min）随大赛提交材料另行提供，不入本仓。
+> 📄 交付物：技术报告 = `docs/submission/deliverables/技术报告-DesktopMate.md`；`logs/` = AI Coding 会话日志。📷 实拍照片、🎬 演示视频（≤5min）随大赛提交材料另行提供，不入本仓。
 
-一句话：**一块利旧的平板主板 + 取自 RK3399 三防平板的 BOE 大屏**，逆向移植、移植点亮后跑 openvela，做成放在桌上天天用的 AI 伙伴——陪伴（电子宠物）× 健康（在座提醒）× 好用（完整桌面 OS）。
+一句话：**一块利旧的平板主板 + 取自 RK3399 三防平板的 BOE 大屏**，逆向移植点亮后跑 openvela，做成放在桌上天天用的 AI 伙伴——陪伴（电子宠物）× 健康（在座提醒）× 好用（完整桌面 OS）。
 
 ---
 
@@ -27,7 +27,7 @@
 | 音乐 | XPlayer 本地 MP3/WAV 播放 + 控件 + 提示音/音乐/AI 三路音频仲裁 |
 | 其他 | 电子书、文件管理、WiFi/蓝牙设置、UART 调试工具、显示（夜览 / 自动亮度） |
 
-**明确不做**：无语音唤醒词、无毒舌人格、无墨水屏/振动、无手机 App（立项设想已按硬件现实裁剪）。
+**明确不做**：无语音唤醒词、不做毒舌人格、无墨水屏/振动、无手机 App（立项设想已按硬件现实裁剪）。
 
 ---
 
@@ -52,13 +52,13 @@
 ## 三、技术亮点（难在哪，怎么证）
 
 **四个硬骨头（均有根因定位，非调参碰运气）**
-1. **BOE 大屏逆向移植**：无 datasheet，从 **RK3399 三防平板安卓 DTB** 提取 init 序列/时序/引脚映射；`CONFIG_T070S140B_MIPI` 与 `CONFIG_BOE_1200X1920_MIPI` 必须互斥（`g_lcd0_config` 重定义）；横屏走**驱动层旋转**（LVGL 矩阵旋转与 DIRECT 渲染不兼容，曾 Data Abort）。
+1. **BOE 大屏逆向移植**：无 datasheet，从 **RK3399 三防平板的安卓 DTB** 提取 init 序列/时序/引脚映射；`CONFIG_T070S140B_MIPI` 与 `CONFIG_BOE_1200X1920_MIPI` 必须互斥（`g_lcd0_config` 重定义）；横屏走**驱动层旋转**（LVGL 矩阵旋转与 DIRECT 渲染不兼容，曾 Data Abort）。
 2. **开机偶发卡 LOGO**：NuttX `de_dsi.c:dsi_gen_wr()` 的 `while(inst_busy);` 无超时死等；仿 `dsi_dcs_wr`（有界 50 次/5ms + 强清）加界根治。→ 公共仓 PR。
 3. **健康提示音"多一声"尾音**：`tone_play_one` 只设 `hw_params` 漏 `sw_params(silence_size)`，短 WAV EOF 后 DMA 欠载重播上一段；补齐后上板验证消失。→ 私仓（App 侧）。
 4. **切歌/连播无声**：codec `RDEN OFF` 清零写反 + RAMP FSM 未复位；`POWER_ANA_CTL@0x348` 只许 `update_bits()` 局部操作、**禁止整写**（-7 屏闪教训）。→ 公共仓 PR（仅麦克风关断 POP）。
 
 **硬件设计与适配**：全新硬件平台适配（R528 BSP + 无 datasheet 屏逆向）。驱动/适配：MIPI DSI 面板（新增）、GT9271 触摸、DSI 链路加固、`sun8iw20-codec`（麦克风关断 POP）、LTR553 ALS（积分时间×增益校正）、SD-MMC 多块读修复、UART/LD2410B 换口与引脚冲突。
-**选型教训**：早期评估 **6 英寸 2160×1080** 屏不可用——能点亮、纯色正常，但一进 LVGL UI 即扭曲畸变，确认为超 R528 显示链路上限；教训：选屏先确认 SoC 显示上限再投入。
+**选型教训**：早期评估 **6 英寸 2160×1080** 屏不可用——能点亮、纯色正常，但一进 LVGL UI 即扭曲畸变，确认为**超出 R528 显示链路上限**；教训：选屏先确认 SoC 显示上限再投入。
 
 **openvela 能力运用（图形 / AI / 多媒体三项）**：LVGL 9.1（图形）、`packages/ai_agent` + 自研 `dm_ai` WS（AI）、XPlayer + PCM（多媒体）。组件：`nuttx`、`apps/graphics/lvgl`、`packages/ai_agent`、`apps/audio` + XPlayer。
 **对 openvela 的改进建议（实测，拟 PR）**：① `de_dsi` gen 写加超时；② LVGL 三处通用 bugfix（GE2D gating / 触摸物理分辨率 clamp / 缺字形占位）+ 文档明示 `lv_color_t` 按色彩格式字节数分配；③ 音频示例统一补 `sw_params`。
@@ -67,7 +67,7 @@
 
 ## 四、目录结构
 
-| 路径 | 作用 | 编译树映射（`contest2026_070_arc.xml`） |
+| 路径 | 作用 | 说明 / 编译树映射（`contest2026_070_arc.xml`） |
 |---|---|---|
 | `r528/luncher_dm/` | 桌面主应用（UI+宠物+AI+网络+天气+音乐） | `vendor/allwinnertech/apps/luncher_dm` |
 | `r528/deskmate/` | 板级提交配置 defconfig | `.../r528s3-gemini-s1/configs/deskmate` |
@@ -119,5 +119,5 @@ cd vendor/allwinnertech/lichee && source envsetup.sh && lunch_nuttx 2 && pack
 
 ## 七、提交与官方文档
 
-- 提交截止 **9.20**；PR 自行 review 合入；首次贡献签 [CLA](https://openvela.com/#/community/cla)（PR 评论 `/check-cla`）。
+- PR 自行 review 合入；首次贡献签 [CLA](https://openvela.com/#/community/cla)（PR 评论 `/check-cla`）。
 - [大赛总览](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/contest_overview.md) ｜ [代码提交指南](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/code_submission_guide.md) ｜ [AI 日志手册](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/ai_coding_log_guide.md)
