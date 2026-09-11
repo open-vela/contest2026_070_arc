@@ -60,7 +60,7 @@ DEFCONFIG="vendor/allwinnertech/boards/r528/r528s3-gemini-s1/configs/deskmate/de
 |---------|------|------|
 | **MIPI DSI 面板驱动** | `t070s140b.c` / `.h` | 7寸 1024x600 MIPI DSI, EK79007AD2 驱动IC |
 | **MIPI DSI SOC 配置** | `t070s140b_mipi_config.c` | 分辨率、时序、DSI lane、GPIO、PWM |
-| **实战案例（本作品）** | `BOE_1200x1920.c` / `.h` + `boe_1200x1920_mipi_config.c` | BOE 1200×1920 MIPI DSI（横屏 1920×1200），废弃平板主板逆向：MIPI 引脚定义 + init 序列 + GT9271 触摸配置 |
+| **实战案例（本作品）** | `BOE_1200x1920.c` / `.h` + `boe_1200x1920_mipi_config.c` | BOE 1200×1920 MIPI DSI（横屏 1920×1200），取自旧平板的 BOE 屏逆向：MIPI 引脚定义 + init 序列 + GT9271 触摸配置 |
 | **SPI 面板驱动** | `ili9341.c` / `.h` | 320x240 SPI, ILI9341 驱动IC |
 | **SPI SOC 配置** | `ili9341_lcd_config.c` / `ili9341_lcd_spi.c` | SPI 接口配置 |
 
