@@ -1,144 +1,123 @@
-# DesktopMate 桌面伙伴（R528 + openvela）
+# DesktopMate 桌面伙伴（YNM-3000）— R528 + openvela
 
-> 2026 首届 openvela AI 硬件开发者大赛 ｜ 赛道：AI 硬件产品创新 ｜ 专属仓 `contest2026_070_arc`
-> 队员：arclau（独立成队，软硬件全栈）｜ 协议：Apache 2.0 ｜ 截止 9.20
-> 代码基线：**ok-20260911-21 / V1.0.0-20260911**（nsh md5 `e342f7c5` / 整包镜像 md5 `08009ea7`，48MB）
+> 2026 首届 openvela AI 硬件开发者大赛 ｜ 赛道：**AI 硬件产品创新**（含新硬件平台适配）｜ 专属仓 `contest2026_070_arc`
+> 队员：arclau（独立成队，软硬件全栈）｜ 协议：Apache-2.0（见 `LICENSE`）｜ 截止 9.20
+> 代码基线：**ok-20260911-21 / V1.0.0-20260911**（`vela.bin`/nsh md5 `e342f7c5`；整包镜像 md5 `08009ea7`，48MB）
 
 > 📷🎬 实拍照片与演示视频（≤5min）随大赛提交材料另行提供，不入本仓。
 
-一句话：**一块利旧的平板主板，逆向点亮 MIPI 大屏，做成放在桌上天天用的 AI 伙伴**——陪伴（电子宠物）× 健康（在座提醒）× 好用（完整桌面 OS）。
+一句话：**一块利旧的平板主板 + 取自 RK3399 三防平板的 BOE 大屏**，逆向移植、移植点亮后跑 openvela，做成放在桌上天天用的 AI 伙伴——陪伴（电子宠物）× 健康（在座提醒）× 好用（完整桌面 OS）。
 
-## 一、作品简介（当前设备，以此为准）
+---
 
-一块利旧的平板主板（Allwinner R528S3-Gemini-S1）+ 取自 RK3399 三防平板的 BOE 1200×1920 MIPI DSI 屏（横屏 1920×1200，由安卓 DTB 移植点亮）+ GT9271 触摸 + UART 人体存在传感器 + 喇叭，跑 openvela，做成桌面 AI 伙伴。
+## 一、作品简介
 
-**实际功能（上板可验，不画饼）**：
-- **桌面 OS**：LVGL 浅色 Dock 桌面（状态栏/时钟/卡片/dock/锁屏），6 个 Dock 应用：音乐、日历、书籍、文件、AI 对话、设置（+锁屏），+ 6 个嵌套设置页：WiFi、蓝牙、日期时间、闹钟、宠物、UART 调试工具。
-- **电子宠物**：12 种情绪状态、144 帧精灵动画，触摸/喂食/命名/成长/断电保持；独立宠物子页（状态/成长/喂食/清档重养）；行为与真实数据联动（坐下→好奇、喝水达标→庆祝、久坐→低落、AI 对话→开心，夜间 22–6 点休眠）。
-- **日历/闹钟/时间**：日历含农历+二十四节气（太阳黄经 107 点全中）+纪念日增删；闹钟多闹钟有序插入+贪睡（音色继承）；日期时间独立子页（自动对时总闸+上次同步时间落盘兜底，无 RTC 恢复上次时间）。
-- **健康提醒**：LD2410B 毫米波人体在座检测 → 喝水提醒（高温自动加密）+ 久坐 30/60/90min 三级提醒 + 每日统计；本地 23 个提示音直播（不断网可用）。
-- **AI 对话**：豆包实时语音（纯按钮 PTT，无唤醒词）+ AI 子页 4 点按快问（无麦可测）+ 城市天气设置（无 GPS，手动设城市，语音/天气卡共用）。
-- **语音编排**：Voice Director 按场景/时段/冷却选本地提示音播报（坐下欢迎、回来问候）。
+一块**利旧的平板主板**（Allwinner R528S3-Gemini-S1）+ **取自 RK3399 三防平板的 BOE 1200×1920 MIPI DSI 屏**（横屏 1920×1200，由安卓 DTB 移植点亮）+ GT9271 触摸 + UART 人体存在传感器 + 喇叭，运行 openvela（NuttX），做成桌面 AI 伙伴。
 
-**明确不做的（立项时想要，已裁剪，原因见二）**：
-无语音唤醒词、无毒舌人格、无墨水屏/振动马达、无手机 App、无 MiMo 全程接入（云端用豆包/火山方舟）。
+**功能清单（上板可验）**
 
-## 二、路线说明（立项 → 现设备）
+| 模块 | 功能 |
+|---|---|
+| 桌面 OS | 状态栏（时间/WiFi/蓝牙/电池）、hero 时钟、天气卡、健康卡、Dock（6 应用）、锁屏待机 |
+| 电子宠物 | 12 情绪 × 12 帧（144 帧）动画；触摸/喂食/命名/成长/清档；与真实数据联动；断电持久化 |
+| 日历 | 农历 + 二十四节气（太阳黄经逐点校验）+ 纪念日增删 |
+| 闹钟 / 时间 | 多闹钟有序插入 + 贪睡 + 音色继承；自动对时总闸 + 无 RTC 落盘兜底 |
+| 健康提醒 | LD2410B 毫米波在座检测；喝水 / 久坐分级提醒；每日统计；本地 23 个提示音 |
+| AI 对话 | 豆包实时语音（纯按钮 PTT，无唤醒词）+ AI 子页点按快问 + 城市天气设置 |
+| 音乐 | XPlayer 本地 MP3/WAV 播放 + 控件 + 提示音/音乐/AI 三路音频仲裁 |
+| 其他 | 电子书、文件管理、WiFi/蓝牙设置、UART 调试工具、显示（夜览 / 自动亮度） |
 
-立项源于"牛马健康助理"（86 盒 + 墨水屏 + 振动 + 手机 App + MiMo 全程，见源仓 `project_docs/homework/xuqiu.txt` 存档）。实际执行中按硬件现实收敛到 R528 大屏桌面形态：
+**明确不做**：无语音唤醒词、无毒舌人格、无墨水屏/振动、无手机 App（立项设想已按硬件现实裁剪）。
 
-| 立项 | 现状 | 原因（一句话） |
-|---|---|---|
-| 86 盒墨水屏 + 振动 | R528 + BOE 大屏，无振动 | 手头废弃平板主板利旧（零采购），大屏交互演示更直接 |
-| MiMo 全程（flash/tts/pro） | 豆包实时语音 + 火山方舟 | 实时语音链路先调通豆包，MiMo provider 待后续迁移 |
-| 唤醒词呼叫 | 纯按钮 PTT | 无 always-on 麦 + 无 KWS 算力，云端轮询已实测不可行；路线图为外挂 KWS 前端 |
-| 毒舌人格/风格切换 | 中性关怀话术 | 单人窗口内保演示主链路，人格化后移 |
-| 手机 App | 无（Settings 本地配置） | 单人 10 天窗口，只保端侧完整可验 |
+---
 
-### 研发历程（216 个 devlog 节点 / 79 篇日志 / 578 次编译打包固化）
+## 二、研发历程（整体进度，2026-07-22 ~ 09-11）
 
-> 每次编译打包成功打一个固化 tag（`ok-YYYYMMDD-N`），基本对应一次刷机上板验证。以下按血泪浓度排序：
+项目不是从"写应用"开始，而是从**点亮一块没有资料的屏**开始——屏不亮则后续一切无从谈起；屏驱动由自研 Skill 从安卓 DTB 移植而来，是典型的"AI 原生 BSP"。全周期约 3 周，**578 次编译打包固化**，全程 AI Coding。
 
-| 战场 | 节点 | 反复次数 | 代表性血泪 |
+| 阶段 | 时间 | 主要工作 | 关键产出 |
 |---|---|---|---|
-| 🔊 声音/切歌 | 8-6~8-8 三天 **86 个 tag**，全项目最惨烈 | 三轮大战 | MP3 无声（44100→48000 重采样）→ 切歌无声 7 连（EBUSY 抢声卡→codec RDEN 清零写反+RAMP FSM 复位）→ 音频仲裁层根治 → 尾音两轮（驱动关断顺序是假凶，真凶是 App 侧漏 `sw_params`）→ 麦克风关断 POP |
-| 🖥️ 屏幕触摸 | 8-3~8-6，38 tag + 两轮回马枪 | 逆向移植 | BOE 屏无 datasheet，从 RK3399 三防平板安卓 DTB 提 init 序列；mipi_config 全局符号互斥坑；后遇卡 LOGO（DSI 死等无超时）和 -7 屏闪（电源寄存器整写）两轮回马枪 |
-| 🐱 电子宠物 | 9-6~9-9，48 tag | 三轮重做 | 黑猫事件（ar 归档污染：同名 C 追加 `_N.o` 永不替换，链接器取旧灰黑占位帧）→ 尺寸/走失/起名卡死 → 像素画→12 态×12 帧精灵链路全量重做 |
-| 📡 UART | 8-26~8-27，32 tag | 方向错了重来 | 排障两天发现 P118 误判——以为的 UART 引脚其实是 TF 卡（PF2/PF4=SDC0）→ 换口 UART1 → 引脚又被 IO 扩展器覆盖 → 1.5M 档波特率极限失败收场 |
-| 📶 WiFi 0x27 | 8-11 / 8-12 / 9-11 三次复发 | 同一症状三种根因 | 最后一次才实锤=res 分区没烧完整（固件校验 fail），由此催生打包三段断言防呆 |
-| 🎨 UI 改版 | 贯穿全程 | 6 个大版本 | 模拟器免刷机工作流 → UI 架构三阶段拆分重构 → V0.0.1~V0.0.7 → iPad 风格子页 → 全量汉化 → 日历/闹钟返工（9-10 单日 44 tag，历史峰值） |
-| 💥 崩溃挂死 | 全程散布 | 两轮集中扫雷 | `lv_color_t` 3B 越界 16KB（第一次 Data Abort）→ LVGL 矩阵旋转死机 → 栈溢出 → 两轮审计清零（一轮 14 项 + 一轮 6 项） |
+| ⓪ 起点·点屏 | 07-22~07-28 | 用 `dts-to-vela-mipi` Skill 把 **RK3399 三防平板（1200×1920）的安卓 DTB** 提取/翻译为 R528 MIPI 面板驱动；注册 BOE 面板点亮；修 `Make.defs` 无条件编译 T070 致 `g_lcd0_config` 符号冲突（分辨率被锁 1024×600） | 屏幕点亮、分辨率正确 |
+| ① 触摸打通 | 07-24~07-28 | GT9271 I2C 触摸：地址选择时序、零长度写/返回值判据等驱动 bug、外部上拉电阻；坐标上报 | 触摸可用（LVGL 可交互） |
+| ② UI 基座 | 08-03~08-09 | 从 LVGL demo 演进为浅色 Dock 桌面；UI 三阶段拆分重构（`deskmate_ui.c` → `ui/` 7 页）；音乐播放链路 | 桌面 OS 骨架 + 音乐 |
+| ③ 能力接入 | 08-10~08-23 | WiFi/蓝牙对接；UART 调试工具；LD2410B 在座检测；天气后台；豆包实时语音；宠物初版 | 六大 Dock 应用 + 宠物 |
+| ④ 系统化 | 08-24~08-31 | 健康提醒（喝水/久坐）、语音编排、Settings 子页体系、稳定性扫雷 | 健康 + 设置体系 |
+| ⑤ 大屏体验 | 09-01~09-09 | 日历（农历/节气）+ 闹钟 + 日期时间对时；宠物 12 态 × 12 帧重做；iPad 风格子页；全量汉化 | 完整产品形态 |
+| ⑥ 收尾发布 | 09-10~09-11 | 稳定性/死代码清理、打包防呆、提示音尾音根治、版本型号、日志合规、报告 | **ok-20260911-21 / V1.0.0** |
 
-## 三、技术亮点（嵌入式视角：难在哪，怎么证）
+> 节点细节：`docs/devlog.md`（216 节点）与 `docs/devlogs/`（102 篇，含 7-24~7-28 早期日志 + 逐篇时间线）。
 
-分层（一句话）：LVGL UI 层（`ui/` 7 页拆分）→ 服务层（`dm_net`/`dm_ai`/`dm_pet`/`dm_health`）→ 驱动层（MIPI DSI/GT9271/codec/LD2410B）。UI 只经服务层 API 碰驱动，驱动回调里禁碰 LVGL。
+---
 
-**四个硬骨头（均有根因定位，非调参碰运气）**：
-1. **BOE 大屏逆向移植**：无 datasheet，从 RK3399 三防平板安卓 DTB 提取 init 序列/时序/引脚映射；`CONFIG_T070S140B_MIPI` 与 `CONFIG_BOE_1200X1920_MIPI` 互斥（`g_lcd0_config` 重定义），开机不加载即查此。
-2. **开机偶发卡 LOGO**：NuttX 显示链路 `de_dsi.c:dsi_gen_wr()` 的 `while(inst_busy);` 无超时死等（面板 init 约 30 次调用，偶发不清零即 spin 住）；仿同文件 `dsi_dcs_wr`（50 次/5ms+强清）加界，根治。→ 公共仓 PR。
-3. **健康提示音"多一声"尾音**：`tone_play_one` 只设 `hw_params` 漏 `sw_params`，短 WAV EOF 后 DMA 欠载重播上一段；补 `silence_size=boundary` 等与音乐/AI 路径一致的参数，上板验证消失。→ 私仓（App 侧）。
-4. **切歌/连播无声**：codec `RDEN OFF` 清零写反 + RAMP FSM 未复位（OFF 清 RDEN + W1C 中断 + RAMP_SRST bit24）；`POWER_ANA_CTL@0x348` 只许 `update_bits()` 局部操作，禁整写（屏闪教训）。→ 公共仓 PR（仅麦克风关断 POP 一项，播放关断顺序已排除）。
+## 三、技术亮点（难在哪，怎么证）
 
-**工程质量（P180/P216 两轮扫雷，崩溃挂死类清零）**：
-- UAF：子页关闭清空全部 UI 指针（含 playlist overlay/empty_lbl，8-08/9-11 两次血案）。
-- 越界：文件删除确认框 snprintf、书籍进度、AI 127 帧 64bit 长度（`(int)` 截断变负→改 `size_t` 比较+超长截断收）。
-- 挂死：AI 对端 close 时 `errno` 残留 EAGAIN 致死 fd 忙等（全路径 EOF 置 `ECONNRESET`）；UART/LD2410B 线程 poll 成功必验 `revents&POLLIN`。
-- 数据：闹钟旧 4 字段档按行解析（fscanf 跨行偷数致整档错位）；宠物名 JSON 转义防丢档。
-- 打包防呆：`pack` 末尾自动跑三段断言（res 路径级+字节/新鲜度、`nsh.fex==vela.bin`、镜像含完整块），失败即中断。
+**四个硬骨头（均有根因定位，非调参碰运气）**
+1. **BOE 大屏逆向移植**：无 datasheet，从 **RK3399 三防平板安卓 DTB** 提取 init 序列/时序/引脚映射；`CONFIG_T070S140B_MIPI` 与 `CONFIG_BOE_1200X1920_MIPI` 必须互斥（`g_lcd0_config` 重定义）；横屏走**驱动层旋转**（LVGL 矩阵旋转与 DIRECT 渲染不兼容，曾 Data Abort）。
+2. **开机偶发卡 LOGO**：NuttX `de_dsi.c:dsi_gen_wr()` 的 `while(inst_busy);` 无超时死等；仿 `dsi_dcs_wr`（有界 50 次/5ms + 强清）加界根治。→ 公共仓 PR。
+3. **健康提示音"多一声"尾音**：`tone_play_one` 只设 `hw_params` 漏 `sw_params(silence_size)`，短 WAV EOF 后 DMA 欠载重播上一段；补齐后上板验证消失。→ 私仓（App 侧）。
+4. **切歌/连播无声**：codec `RDEN OFF` 清零写反 + RAMP FSM 未复位；`POWER_ANA_CTL@0x348` 只许 `update_bits()` 局部操作、**禁止整写**（-7 屏闪教训）。→ 公共仓 PR（仅麦克风关断 POP）。
 
-**公共仓 PR（另提，不在本仓）**：`sun8iw20-codec` 麦克风关断 POP、`de_dsi` 超时、`BOE_1200x1920` 面板、`ltr553` ALS 校正、LVGL 三 fix（GE2D gating/触摸物理分辨率 clamp/缺字形占位）→ `dev-ai-contest-2026`。
+**硬件设计与适配**：全新硬件平台适配（R528 BSP + 无 datasheet 屏逆向）。驱动/适配：MIPI DSI 面板（新增）、GT9271 触摸、DSI 链路加固、`sun8iw20-codec`（麦克风关断 POP）、LTR553 ALS（积分时间×增益校正）、SD-MMC 多块读修复、UART/LD2410B 换口与引脚冲突。
+**选型教训**：早期评估 **6 英寸 2160×1080** 屏不可用——能点亮、纯色正常，但一进 LVGL UI 即扭曲畸变，确认为超 R528 显示链路上限；教训：选屏先确认 SoC 显示上限再投入。
+
+**openvela 能力运用（图形 / AI / 多媒体三项）**：LVGL 9.1（图形）、`packages/ai_agent` + 自研 `dm_ai` WS（AI）、XPlayer + PCM（多媒体）。组件：`nuttx`、`apps/graphics/lvgl`、`packages/ai_agent`、`apps/audio` + XPlayer。
+**对 openvela 的改进建议（实测，拟 PR）**：① `de_dsi` gen 写加超时；② LVGL 三处通用 bugfix（GE2D gating / 触摸物理分辨率 clamp / 缺字形占位）+ 文档明示 `lv_color_t` 按色彩格式字节数分配；③ 音频示例统一补 `sw_params`。
+
+---
 
 ## 四、目录结构
 
-| 路径 | 作用 | 编译树映射（contest2026_070_arc.xml） |
+| 路径 | 作用 | 编译树映射（`contest2026_070_arc.xml`） |
 |---|---|---|
-| `r528/luncher_dm/` | 桌面主应用（UI+宠物+AI+网络+天气+音乐，65M，已同步 ok-20260911-21 源码，构建产物已清） | `vendor/allwinnertech/apps/luncher_dm` |
+| `r528/luncher_dm/` | 桌面主应用（UI+宠物+AI+网络+天气+音乐） | `vendor/allwinnertech/apps/luncher_dm` |
 | `r528/deskmate/` | 板级提交配置 defconfig | `.../r528s3-gemini-s1/configs/deskmate` |
-| `r528/res_tones/` | 新增提示音 wav（23 个，4.6M） | `lichee/board/common/data/res/tones` |
+| `r528/res_tones/` | 新增提示音 wav（23 个） | `lichee/board/common/data/res/tones` |
 | `r528/agent_secrets.h.example` | AI 凭证模板（真文件永不进仓） | 手动 cp 到 `packages/ai_agent/include/agent_secrets.h` |
-| `skills/dts-to-vela-mipi/` | MIPI 屏逆向移植 Skill | 方法论，可复用 |
-| `skills/deskmate-ui/` | LVGL 大屏 UI 设计 Skill | 方法论，可复用 |
-| `skills/product-designer-ui/` | 产品设计 Skill | 方法论，可复用 |
-| `skills/ai-devlog-system/` | **AI 长周期记忆体系 Skill**（AGENTS+DevLog 双文件机制蒸馏） | 方法论，可复用 |
-| `skills/contest-log-collector/` | AI 日志归集 Skill（官方） | 日志采集用 |
-| `docs/AGENTS.md` | **AI 会话交接协议实例**（3 周全程使用，评委导读头） | AI 开发过程证据 |
-| `docs/devlog.md` + `docs/devlogs/`（102 篇） | **节点索引 + 全量开发日志**（216 节点，已脱敏） | AI 开发过程证据 |
-| `docs/specs/`（16 个） | 语音/宠物/WiFi/书籍 设计规格（AI 参与设计的产物） | AI 开发过程证据 |
-| `docs/methodology.md` | 排障方法论（10 条，AI 与人共同沉淀） | 方法论沉淀 |
-| `docs/verify_checklist.md` | 上板验证清单（R/V 逐项勾选记录） | 验证纪律证据 |
-| `logs/` | AI Coding 会话日志 | 按日志手册导出后提交 |
+| `logs/` | **AI Coding 会话日志**（149 会话，见 `logs/README.md`） | 作品提交要求 |
+| `skills/` | Skill：`dts-to-vela-mipi` / `deskmate-ui` / `product-designer-ui` / `ai-devlog-system` / `deskmate-agent` / `devlog` / `contest-log-collector` | AI 开发证据 |
+| `docs/devlog.md` + `docs/devlogs/`（102 篇） | 节点索引 + 全量开发日志 + 逐篇时间线 | AI 开发过程证据 |
+| `docs/specs/`（16 个） | 语音/宠物/WiFi/书籍 设计规格 | AI 参与设计证据 |
+| `docs/submission/deliverables/` | 技术报告 / 开发功能-分层 / 开发历程逐篇时间线 | 交付物 |
+| `docs/AGENTS.md` · `docs/methodology.md` · `docs/verify_checklist.md` | 会话交接协议 / 排障方法论 / 上板验证清单 | 过程证据 |
 
-公共仓改动（不在本仓，另提 PR 到 `dev-ai-contest-2026`）：codec 麦克风关断 POP + DSI 超时 + BOE 面板 + ALS 校正 + LVGL 三处通用 bugfix（GE2D gating/触摸物理分辨率 clamp/缺字形占位）。
+---
 
 ## 五、运行方式（评委复现清单）
 
 ```bash
-# 1. 拉工程
+# 1. 拉工程（openvela 全量源码 + 本专属仓，linkfile 映射到编译树）
 repo init -u https://github.com/open-vela/contest2026_070_arc \
   -b dev-ai-contest-2026 -m contest2026_070_arc.xml
 repo sync -c -j8
 
-# 2. 填 AI 凭证（豆包语音 + 火山方舟）
+# 2. 填 AI 凭证（豆包语音 + 火山方舟；无 key 时除 AI 对话外全部本地可用）
 cp contest2026_070_arc/r528/agent_secrets.h.example \
    packages/ai_agent/include/agent_secrets.h
-# 用火山引擎控制台的 APP ID / Token / Ark key 填进去；
-# 真文件已被 .gitignore 忽略，不会进 Git 历史。
-# 评委无 key 时：除 AI 对话外全部功能本地可用（宠物/健康/音乐/文件/电子书/设置）。
 
-# 3. 编译（SDK 自带 GCC 13.4.0，build.sh 自动注入）
+# 3. 编译（SDK 自带 GCC 13.4.0）
 ./build.sh vendor/allwinnertech/boards/r528/r528s3-gemini-s1/configs/deskmate -j$(nproc)
 
-# 4. 打包烧录（整包镜像，res 分区含 WiFi 固件+字体+提示音）
+# 4. 打包烧录（整包 NAND 镜像，res 分区含 WiFi 固件+字体+提示音）
 cd vendor/allwinnertech/lichee && source envsetup.sh && lunch_nuttx 2 && pack
 # 产物：out/r528s3/gemini-s1_nand/rtos_nuttx_r528s3-gemini-s1_uart0_128Mnand.img
-# 打包后必跑资源检查（见源仓 check_res.sh 思路：res.fex 路径级验证）
 ```
 
-硬件：R528S3-Gemini-S1 + BOE 1200×1920 MIPI DSI（横屏 1920×1200）+ GT9271 触摸 + LD2410B 人体存在传感器（/dev/uart3）+ 喇叭。
+- **演示物料**：TF 卡放 `/sdcard/music`（1 mp3 + 1 wav）与 `/sdcard/book`（UTF-8 短 txt）；板子连 WiFi；雷达对人 ≤1.5m。
+- **3 分钟冒烟**：① 开机进 Home（无卡 LOGO）；② 点猫有反应；③ AI 子页快问（无 key 可测本地链路）；④ 坐到传感器前播欢迎；⑤ 音乐播 mp3 无尾音、切歌不哑。
+- **排障**：`RTL871X download_fw FAIL status=0x27` = res 分区没完整烧录，重烧整包；`亮度/光感恒 0` = 传感器未接。
 
-**演示物料（缺了不影响开机，但对应功能测不了）**：
-- TF 卡：1 个 mp3 + 1 个 wav 到 `/sdcard/music`，1 本 UTF-8 短 txt 到 `/sdcard/book`。
-- 联网：板子连 WiFi（AI 对话/天气需要；宠物/健康/音乐/文件/电子书/设置全本地可用）。
-- 雷达对人 ≤1.5m（在座检测/问候/提醒链路）。
+---
 
-**预期结果（3 分钟冒烟）**：
-1. 开机进 Home：时钟/天气卡/宠物猫正常显示，无卡 LOGO。
-2. 点猫：大小不变、有抚摸反应；长按只抚摸不弹条。
-3. 进 AI 子页点快问（无 key 可测本地链路）；有 key 时按 PTT 说话，松开后喇叭播报。
-4. 坐到传感器前：播坐下欢迎；离开再回：时段问候。
-5. 进音乐播 mp3：立体声、无尾音；切歌不哑。
+## 六、AI Coding 使用说明（如实）
 
-**排障一句**：`RTL871X download_fw FAIL status=0x27` = res 分区没完整烧录，重烧整包镜像；`亮度/光感恒 0` = 传感器积灰或未接，先查 `grep LTR553`。
+- **主力工具 AtomCode**（AtomGit 的 AI 编码助手）**不在大赛官方采集器支持列表内**（官方仅支持 claude-code / opencode / codex / kiro / mimocode / cursor），官方插件无法自动写入 `logs/`。
+- 为让评审看到完整过程，本仓用**自研脚本**把 AtomCode 原始会话（`~/.atomcode/sessions/`）归一化为官方事件 schema，`tool` 字段**如实标注为 `atomcode`，不冒充**；同期 OpenCode / Claude Code 属支持工具，由官方 `export-session.py --backfill` 导出（共 **149 会话**：AtomCode 93 / OpenCode 47 / Claude Code 9）。详见 `logs/README.md`。
+- 需求拆解/方案设计、UI/驱动/语音编码、疑难调试（Data Abort/越界/矩阵旋转/音频）均与 AI 协作，人工 review + 上板验证；**新增沉淀 4 个开发期 Skill + 2 个运行时 Skill**（`deskmate-agent`/`devlog`）。
+- 过程数据：代码 **686,661 行**（业务逻辑 94,245 + 精灵数据 592,416）；**216 个 devlog 节点 / 102 篇**；**578 个固化 tag**。
 
-## 六、AI Coding 使用说明
+---
 
-- 需求拆解/方案设计：与 AI 对话定 Dock 布局、子页信息架构、宠物成长数值。
-- 编码：UI 子页、驱动对接、语音链路均由 AI 生成初版，人工 review 上板验证。
-- 调试：Data Abort/越界/矩阵旋转等硬骨头按"现象→多假设→最小验证"与 AI 联合定位。
-- 效率：6 应用 + 宠物/日历/闹钟系统约 3 周交付；沉淀 Skill 3 个，换屏/换 UI 风格可直接复用。
-- 完整对话日志见 `logs/` 目录。
+## 七、提交与官方文档
 
-## 七、官方文档
-
-- [大赛总览](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/contest_overview.md) ｜ [代码提交指南](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/code_submission_guide.md) ｜ [AI 日志手册](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/ai_coding_log_guide.md) ｜ [AI 硬件赛道导航](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/ai_hardware/ai_hardware_guide_index.md)
-- 提交截止 9.20；PR 自行合入；首次贡献签 [CLA](https://openvela.com/#/community/cla)（PR 评论 `/check-cla`）。
+- 提交截止 **9.20**；PR 自行 review 合入；首次贡献签 [CLA](https://openvela.com/#/community/cla)（PR 评论 `/check-cla`）。
+- [大赛总览](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/contest_overview.md) ｜ [代码提交指南](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/code_submission_guide.md) ｜ [AI 日志手册](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/ai_coding_log_guide.md)
