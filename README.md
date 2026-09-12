@@ -17,6 +17,7 @@
 
 **功能清单（上板可验）**
 <img width="1920" height="1200" alt="shot_20260912-080812-3" src="https://github.com/user-attachments/assets/fbbf1997-8c43-4146-8a4b-67f20f1191cb" />
+<img width="1920" height="1200" alt="shot_20260912-080802-2" src="https://github.com/user-attachments/assets/8e4b66ea-1451-49f5-a517-95955416f18b" />
 
 | 模块 | 功能 |
 |---|---|
