@@ -4,7 +4,7 @@
 > 队员：arclau（独立成队，软硬件全栈）｜ 协议：Apache-2.0（见 `LICENSE`）
 > 代码基线：**ok-20260911-21 / V1.0.0-20260911**（`vela.bin`/nsh md5 `e342f7c5`；整包镜像 md5 `08009ea7`，48MB）
 
-> 📄 交付物：技术报告 = `docs/submission/deliverables/技术报告-DesktopMate.md`；`logs/` = AI Coding 会话日志。📷 实拍照片、🎬 演示视频（≤5min）随大赛提交材料另行提供，不入本仓。
+> 
 
 一句话：**openvela 大赛赞助的 R528 开发板 + 取自旧平板的 BOE 大屏**，逆向移植点亮后跑 openvela，做成放在桌上天天用的 AI 伙伴——陪伴（电子宠物）× 健康（在座提醒）× 好用（完整桌面 OS）。
 
@@ -13,8 +13,10 @@
 ## 一、作品简介
 
 **openvela 大赛赞助的 R528S3-Gemini-S1 开发板** + **取自旧平板的 BOE 1200×1920 MIPI DSI 屏**（横屏 1920×1200，由安卓 DTB 移植点亮）+ GT9271 触摸 + UART 人体存在传感器 + 喇叭，运行 openvela（NuttX），做成桌面 AI 伙伴。
+<img width="4032" height="3024" alt="IMG_1144" src="https://github.com/user-attachments/assets/de1bef04-36b1-4ffd-a4a4-aea49473fef2" />
 
 **功能清单（上板可验）**
+<img width="1920" height="1200" alt="shot_20260912-080812-3" src="https://github.com/user-attachments/assets/fbbf1997-8c43-4146-8a4b-67f20f1191cb" />
 
 | 模块 | 功能 |
 |---|---|
