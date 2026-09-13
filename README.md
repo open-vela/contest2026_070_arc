@@ -120,10 +120,10 @@ cd vendor/allwinnertech/lichee && source envsetup.sh && lunch_nuttx 2 && pack
 
 ---
 
-## 六、AI Coding 使用说明（如实）
+## 六、AI Coding 使用说明
 
 - **主力工具 AtomCode**（AtomGit 的 AI 编码助手）**不在大赛官方采集器支持列表内**（官方仅支持 claude-code / opencode / codex / kiro / mimocode / cursor），官方插件无法自动写入 `logs/`。
-- 为让评审看到完整过程，本仓用**自研脚本**把 AtomCode 原始会话（`~/.atomcode/sessions/`）归一化为官方事件 schema，`tool` 字段**如实标注为 `atomcode`，不冒充**；同期 OpenCode / Claude Code 属支持工具，由官方 `export-session.py --backfill` 导出（共 **149 会话**：AtomCode 93 / OpenCode 47 / Claude Code 9）。详见 `logs/README.md`。
+- 为让评审看到完整过程，本仓用**自研脚本**把 AtomCode 原始会话（`~/.atomcode/sessions/`）归一化为官方事件 schema，`tool` 字段标注为 `atomcode`；同期 OpenCode / Claude Code 属支持工具，由官方 `export-session.py --backfill` 导出（共 **149 会话**：AtomCode 93 / OpenCode 47 / Claude Code 9）。详见 `logs/README.md`。
 - 需求拆解/方案设计、UI/驱动/语音编码、疑难调试（Data Abort/越界/矩阵旋转/音频）均与 AI 协作，人工 review + 上板验证；**新增沉淀 4 个开发期 Skill + 2 个运行时 Skill**（`deskmate-agent`/`devlog`）。
 - 过程数据：代码 **687,129 行**（业务逻辑 94,713 + 精灵数据 592,416）；**216 个 devlog 节点 / 102 篇**；**578 个固化 tag**。
 

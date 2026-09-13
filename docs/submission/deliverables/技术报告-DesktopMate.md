@@ -307,7 +307,7 @@ AI 语音对话：
 | 锁屏/待机/唤醒 | 无操作锁屏、触摸唤醒 | ✅ 通过 |
 | 断电重启 | 状态持久化恢复 | ✅ 通过 |
 
-> 注：受限项如实列出（蓝牙配对受 H4 挂起限制、AI 需 key），其余 13 项上板通过。
+> 注：受限项（蓝牙配对受 H4 挂起限制、AI 需 key），其余 13 项上板通过。
 
 **性能测试**
 
@@ -338,9 +338,9 @@ AI 语音对话：
 | 指标 | 数据 |
 |---|---|
 | AI Coding 代码占比 | 代码由 AI 生成（业务代码约 9.5 万行由 AI 生成初版、约 59.2 万行精灵 C 数组由 AI 工具链脚本生成，合计约 68.7 万行）；人工负责需求定义、硬件设计、上板验证与验收。 |
-| 使用的 AI 工具 | **AtomCode（主力）** + OpenCode + Claude Code。⚠️ **AtomCode 不在大赛官方采集器支持列表内**（官方仅支持 claude-code / opencode / codex / kiro / mimocode / cursor），如实说明。 |
+| 使用的 AI 工具 | **AtomCode（主力）** + OpenCode + Claude Code。⚠️ **AtomCode 不在大赛官方采集器支持列表内**（官方仅支持 claude-code / opencode / codex / kiro / mimocode / cursor）。 |
 | 使用的模型 | AtomCode 内按任务切换：DeepSeek-V4-Flash / **MiMo-v2.5-Pro** / GLM 等（大赛 MiMo 已用于开发） |
-| MCP 工具使用情况 | 未使用 MCP（全程用文件/shell/git 等内置工具 + 自建 Skill 弥补领域知识，如实说明） |
+| MCP 工具使用情况 | 未使用 MCP（全程用文件/shell/git 等内置工具 + 自建 Skill 弥补领域知识） |
 | Skills 使用与新增情况 | 使用：官方 openvela Skills（openvela-build / nuttx-driver-development / pcm-audio / memdump / kconfig-tweak 等，按需加载）；**新增沉淀 4 个开发期 Skill**（dts-to-vela-mipi / deskmate-ui / product-designer-ui / ai-devlog-system）+ **2 个运行时 Skill**（deskmate-agent / devlog），均随仓提交 |
 | Token 使用总量 | **≈420,804,394**（输入 394,331,973 + 输出 26,472,421；缓存命中 389,133,056）——由 AtomCode 会话 `usage` 字段实测汇总 |
 
@@ -361,7 +361,7 @@ AI 语音对话：
 **遇到的问题与解决**
 
 - AI 生成代码需人工 review（驱动对照 datasheet/寄存器手册核验）；144 帧精灵 ≈ 59 万行 C 数组超出单次生成能力，需分批生成 + 脚本；偶有 API 幻觉需查源码。
-- 日志说明：前期使用 MiMo Coding 忘开官方插件记录 logs，结果 MiMo 额度用完就续不上了。所以转用主力开发工具 AtomCode，但 AtomCode 并不在大赛官方采集器支持列表内，为让评审看到完整 AI Coding 过程，用本仓脚本 `skills/contest-log-collector/scripts/backfill_atomcode.py` 把 AtomCode 原始会话（`~/.atomcode/sessions/`）归一化为官方事件 schema 后入仓，`tool` 字段如实标注为 `atomcode`，不冒充任何受支持工具。同期 OpenCode / Claude Code 属官方支持工具，由官方 `export-session.py --backfill` 导出（`tool` 标注 `opencode` / `claude-code`）。合计 149 会话（AtomCode 93 / OpenCode 47 / Claude Code 9），`seq` 单调、内容未经人工改写，可审计；官方校验器 `validate-log.py` 的 `tool` 枚举不含 `atomcode`，故 AtomCode 会话会报枚举错误——属"如实标注真实来源"与"官方枚举未覆盖该工具"之间的冲突，不是篡改。详见 `logs/README.md`。
+- 日志说明：前期使用 MiMo Coding 忘开官方插件记录 logs，结果 MiMo 额度用完就续不上了。所以转用主力开发工具 AtomCode，但 AtomCode 并不在大赛官方采集器支持列表内，为让评审看到完整 AI Coding 过程，用本仓脚本 `skills/contest-log-collector/scripts/backfill_atomcode.py` 把 AtomCode 原始会话（`~/.atomcode/sessions/`）归一化为官方事件 schema 后入仓，`tool` 字段标注为 `atomcode`。同期 OpenCode / Claude Code 属官方支持工具，由官方 `export-session.py --backfill` 导出（`tool` 标注 `opencode` / `claude-code`）。合计 149 会话（AtomCode 93 / OpenCode 47 / Claude Code 9），`seq` 单调、内容未经人工改写，可审计；官方校验器 `validate-log.py` 的 `tool` 枚举不含 `atomcode`，故 AtomCode 会话会报枚举错误——是官方枚举未覆盖该工具所致。详见 `logs/README.md`。
 
 ### 3.7 总结与展望
 
@@ -384,7 +384,7 @@ AI 语音对话：
 
 ## 5、注意事项
 
-- AI Coding 日志已入仓 `logs/`（149 个会话，2026-08-01 ~ 2026-09-11）；AtomCode 来源已由脚本归一化并如实标注 `tool`。
+- AI Coding 日志已入仓 `logs/`（149 个会话，2026-08-01 ~ 2026-09-11）；AtomCode 来源已由脚本归一化并标注 `tool`。
 - 作品原创，遵循 Apache 2.0；公共仓驱动改动**已提 PR** → [open-vela/vendor_allwinnertech#20](https://github.com/open-vela/vendor_allwinnertech/pull/20)。
 - openvela 系统能力落地：图形（LVGL）、AI（ai_agent + 语音对话）、多媒体（XPlayer/音频）。
 - 语音交互为纯按钮 PTT，无唤醒词（已评估放弃 always-on 唤醒）。
